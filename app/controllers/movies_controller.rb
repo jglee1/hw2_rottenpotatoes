@@ -1,5 +1,7 @@
 class MoviesController < ApplicationController
 
+  helper_method :sortBy
+
   def show
     id = params[:id] # retrieve movie ID from URI route
     @movie = Movie.find(id) # look up movie by unique ID
@@ -7,7 +9,9 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.all
+    @movies = Movie.scoped
+    @movies = @movies.order('title') if params['sort'] == 'title'
+    @movies = @movies.order('release_date') if params['sort'] == 'release_date'
   end
 
   def new
@@ -38,4 +42,9 @@ class MoviesController < ApplicationController
     redirect_to movies_path
   end
 
+  private
+
+  def sortBy
+    params[:sort]
+  end
 end
