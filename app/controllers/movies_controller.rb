@@ -1,6 +1,6 @@
 class MoviesController < ApplicationController
 
-  helper_method :sortBy
+  helper_method :sortBy, :filtered_rating
 
   def show
     id = params[:id] # retrieve movie ID from URI route
@@ -9,9 +9,16 @@ class MoviesController < ApplicationController
   end
 
   def index
+    @all_ratings = Movie.rating_list
+    @ratings = @all_ratings
+    if params[:ratings] then
+      @ratings = params[:ratings].select { |k,v| v=="1"}.keys
+    end
     @movies = Movie.scoped
+    @movies = @movies.where("rating IN (?)", @ratings)
     @movies = @movies.order('title') if params['sort'] == 'title'
     @movies = @movies.order('release_date') if params['sort'] == 'release_date'
+
   end
 
   def new
@@ -47,4 +54,10 @@ class MoviesController < ApplicationController
   def sortBy
     params[:sort]
   end
+  def filteredRating
+    rating_list =[]
+    rating_list = params[:rating].select {|k,v| v=="1"}.keys
+    return rating_list
+  end
+
 end
