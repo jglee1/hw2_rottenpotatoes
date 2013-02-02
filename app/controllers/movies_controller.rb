@@ -9,16 +9,27 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @all_ratings = Movie.rating_list
-    @ratings = @all_ratings
-    if params[:ratings] then
-      @ratings = params[:ratings].select { |k,v| v=="1"}.keys
+    sort = params[:sort] || session[:sort]
+    case sort
+    when 'title'
+      ordering, @title_header = {:order => :title}, 'hilite'
+    when 'release_date'
+      ordering, @date_header = {:order => :release_date}, 'hilite'
     end
-    @movies = Movie.scoped
-    @movies = @movies.where("rating IN (?)", @ratings)
-    @movies = @movies.order('title') if params['sort'] == 'title'
-    @movies = @movies.order('release_date') if params['sort'] == 'release_date'
 
+    @all_ratings = Movie.all_rating_list
+    @rating_list = params[:ratings] || session[:ratings] || {}
+
+    if @rating_list == {}
+      @rating_list = Hash[@all_ratings.map{ |rating| [rating,rating] }]
+    end
+
+    if params[:sort] != session[:sort] or params[:ratings] != session[:ratings]
+      session[:sort] = sort
+      session[:ratings] = @rating_list
+      redirect_to :sort => sort, :ratings => @rating_list and return
+    end
+    @movies = Movie.find_all_by_rating(@rating_list.keys, ordering)
   end
 
   def new
@@ -55,9 +66,9 @@ class MoviesController < ApplicationController
     params[:sort]
   end
   def filteredRating
-    rating_list =[]
-    rating_list = params[:rating].select {|k,v| v=="1"}.keys
-    return rating_list
+    @rating_list =[]
+    @rating_list = params[:rating].select {|k,v| v=="1"}.keys
+    return @rating_list
   end
 
 end
